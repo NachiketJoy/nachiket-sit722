@@ -7,35 +7,114 @@ on:
 
 env:
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+  IMAGE_TAG: ${{ github.sha }}-${{ github.run_id }}
 
 jobs:
-  test-and-push:
-    runs-on: ubuntu-latest
+  # Job 1: Run tests and linting for all backend services
+  test_and_lint_backends:
+    runs-on: ubuntu-latest # Use a GitHub-hosted runner
+
+    services:
+      # Product DB container
+      product_db:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: products
+        # Make pg_isready available so the service is healthy before tests run
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      # Order DB
+      order_db:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: orders
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # 1. Checkout the repository code to the runner
+      - name: Checkout repository
+        uses: actions/checkout@v4 # Action to check out your repository code
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      # 2. Set up Python environment
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5 # Action to set up Python environment
+        with:
+          python-version: '3.10'
 
-    - name: Install dependencies
-      run: |
-        pip install --upgrade pip
-        # Loop through each backend service folder
-        for req in backend/*/requirements.txt; do
-          echo "Installing $req"
-          pip install -r "$req"
-        done
-        # Install CI tools
-        pip install pytest httpx
+      # 3. Install dependencies and run code quality checks
+      - name: Install dependencies
+        run: | # Use a multi-line script to install pip dependencies
+          pip install --upgrade pip
+          # Loop through each backend service folder
+          for req in backend/*/requirements.txt; do
+            echo "Installing $req"
+            pip install -r "$req"
+          done
+          # Install CI tools
+          pip install pytest httpx
 
-    - name: Run tests
-      run: |
-        pytest
+      # 5. Run tests for product service
+      - name: Run product_service tests
+        working-directory: backend/product_service
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: products
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        run: |
+          pytest tests --maxfail=1 --disable-warnings -q
+      
+      # 6. Run tests for order service
+      - name: Run order_service tests
+        working-directory: backend/order_service
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5433
+          POSTGRES_DB: orders
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        run: |
+          pytest tests --maxfail=1 --disable-warnings -q
 
+      # 6. Run tests for customer service
+      - name: Run customer_service tests
+        working-directory: backend/order_service
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5433
+          POSTGRES_DB: orders
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        run: |
+          pytest tests --maxfail=1 --disable-warnings -q
+
+  # Job 2: Build and Push Docker Images (runs only if tests pass)
+  build_and_push_images:
+    runs-on: ubuntu-latest
+    needs: test_and_lint_backends
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Login to Azure Container Registry (ACR)
     - name: Log in to Azure Container Registry
       uses: azure/docker-login@v1
       with:
@@ -43,7 +122,26 @@ jobs:
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
 
-    - name: Build and push order_service image
+
+    # Build and Push Docker image for Product Service
+    - name: Build and Push Product Service Image
+      run: |
+        docker build -t ${{ env.ACR_LOGIN_SERVER }}/product_service:latest ./backend/product_service/
+        docker push ${{ env.ACR_LOGIN_SERVER }}/product_service:latest
+
+    # Build and Push Docker image for Order Service
+    - name: Build and Push Order Service Image
       run: |
         docker build -t ${{ env.ACR_LOGIN_SERVER }}/order_service:latest ./backend/order_service/
         docker push ${{ env.ACR_LOGIN_SERVER }}/order_service:latest
+
+    # Build and Push Docker image for Customer Service
+    - name: Build and Push Customer Service Image
+      run: |
+        docker build -t ${{ env.ACR_LOGIN_SERVER }}/customer_service:latest ./backend/customer_service/
+        docker push ${{ env.ACR_LOGIN_SERVER }}/customer_service:latest
+
+    # Logout from Azure for security (runs even if image push fails)
+    # - name: Logout from Azure
+    #   run: az logout
+    #   if: always()
