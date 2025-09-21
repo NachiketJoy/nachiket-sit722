@@ -38,12 +38,15 @@ jobs:
             --generate-ssh-keys \
             --enable-managed-identity
 
-      - name: Attach ACR to AKS
-        run: |
-          az aks update \
-            --name $CLUSTER_NAME \
-            --resource-group $RESOURCE_GROUP \
-            --attach-acr $ACR_NAME
+      # - name: Attach ACR to AKS
+      #   run: |
+      #     az aks update \
+      #       --name $CLUSTER_NAME \
+      #       --resource-group $RESOURCE_GROUP \
+      #       --attach-acr $ACR_NAME
+
+      - name: Docker Login to ACR
+        run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
