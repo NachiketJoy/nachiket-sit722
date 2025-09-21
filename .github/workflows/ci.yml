@@ -15,35 +15,6 @@ jobs:
   test_and_lint_backends:
     runs-on: ubuntu-latest
 
-    services:
-      product_db:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: products
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      order_db:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: orders
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5433:5432
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -64,32 +35,14 @@ jobs:
 
       - name: Run product_service tests
         working-directory: backend/product_service
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_DB: products
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
         run: pytest tests --maxfail=1 --disable-warnings -q
 
       - name: Run order_service tests
         working-directory: backend/order_service
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5433
-          POSTGRES_DB: orders
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
         run: pytest tests --maxfail=1 --disable-warnings -q
 
       - name: Run customer_service tests
         working-directory: backend/customer_service
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5433
-          POSTGRES_DB: orders
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
         run: pytest tests --maxfail=1 --disable-warnings -q
 
   # Job 2: Build and Push Docker Images
