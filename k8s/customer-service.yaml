@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service-w10
+  labels:
+    app: customer-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-service
+  template:
+    metadata:
+      labels:
+        app: customer-service
+    spec:
+      containers:
+      - name: customer-service-container
+        image: week10.azurecr.io/customer_service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-service-w10
+  labels:
+    app: customer-service
+spec:
+  selector:
+    app: customer-service
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 8000
+  type: LoadBalancer

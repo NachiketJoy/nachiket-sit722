@@ -1,0 +1,73 @@
+name: Stage 2 - Deploy to Temporary Staging
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline - Build and Push Testing Image"]
+    types:
+      - completed
+
+jobs:
+  staging-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      RESOURCE_GROUP: staging-rg-${{ github.run_id }}
+      CLUSTER_NAME: staging-cluster-${{ github.run_id }}
+      LOCATION: australiaeast
+      ACR_NAME: nachiketacr
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    - name: Create temporary resource group
+      run: |
+        az group create --name $RESOURCE_GROUP --location $LOCATION
+
+    - name: Create AKS cluster
+      run: |
+        az aks create \
+          --resource-group $RESOURCE_GROUP \
+          --name $CLUSTER_NAME \
+          --node-count 1 \
+          --generate-ssh-keys \
+          --enable-managed-identity
+
+    - name: Attach ACR to AKS
+      run: |
+        az aks update \
+          --name $CLUSTER_NAME \
+          --resource-group $RESOURCE_GROUP \
+          --attach-acr $ACR_NAME
+
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME
+
+    - name: Deploy backend services
+      run: |
+        kubectl apply -f week10/k8s/product-service.yaml
+        kubectl apply -f week10/k8s/order-service.yaml
+        kubectl apply -f week10/k8s/customer-service.yaml
+
+    - name: Wait for deployments
+      run: |
+        kubectl rollout status deployment/product-service-w10
+        kubectl rollout status deployment/order-service-w10
+        kubectl rollout status deployment/customer-service-w10
+
+    - name: Run trivial acceptance test
+      run: |
+        kubectl get svc
+        # Optional: curl health endpoints if exposed
+
+    - name: Destroy staging environment
+      run: |
+        az group delete --name $RESOURCE_GROUP --yes --no-wait
