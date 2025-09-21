@@ -1,33 +1,32 @@
+# week05/k8s/product-db.yaml
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: customer-service-w10
+  name: product-db-deployment-w10
   labels:
-    app: customer-service
+    app: product-db
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: customer-service
+      app: product-db
   template:
     metadata:
       labels:
-        app: customer-service
+        app: product-db
     spec:
       containers:
-      - name: customer-service-container
-        image: week10.azurecr.io/customer-service:latest
-        imagePullPolicy: Always
+      - name: postgres
+        image: postgres:15-alpine
         ports:
-        - containerPort: 8002
+        - containerPort: 5432
         env:
-        - name: POSTGRES_HOST
-          value: customer-db-service-w10
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
               name: ecomm-config-w10
-              key: CUSTOMERS_DB_NAME
+              key: PRODUCTS_DB_NAME
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
@@ -42,14 +41,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: customer-service-w10
+  name: product-db-service-w10
   labels:
-    app: customer-service
+    app: product-db
 spec:
   selector:
-    app: customer-service
+    app: product-db
   ports:
     - protocol: TCP
-      port: 8002
-      targetPort: 8000
-  type: LoadBalancer
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP
