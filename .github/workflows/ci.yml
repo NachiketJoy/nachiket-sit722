@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI Pipeline - Build and Push Testing Image
 
 on:
   push:
@@ -23,7 +23,14 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
+        pip install --upgrade pip
+        # Loop through each backend service folder
+        for req in backend/*/requirements.txt; do
+          echo "Installing $req"
+          pip install -r "$req"
+        done
+        # Install CI tools
+        pip install pytest httpx
 
     - name: Run tests
       run: |
