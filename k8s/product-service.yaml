@@ -18,6 +18,8 @@ spec:
       - name: product-service-container
         image: week10.azurecr.io/product_service:latest
         imagePullPolicy: Always
+        imagePullSecrets:
+      - name: acr-secret
         ports:
         - containerPort: 8000
 
