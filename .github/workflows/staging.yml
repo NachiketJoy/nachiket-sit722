@@ -45,11 +45,19 @@ jobs:
       #       --resource-group $RESOURCE_GROUP \
       #       --attach-acr $ACR_NAME
 
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
+
       - name: Docker Login to ACR
         run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
-      - name: Get AKS credentials
-        run: az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
+      - name: Create Kubernetes secret for ACR
+        run: |
+          kubectl create secret docker-registry acr-secret \
+            --docker-server=${{ secrets.ACR_LOGIN_SERVER }} \
+            --docker-username=${{ secrets.ACR_USERNAME }} \
+            --docker-password=${{ secrets.ACR_PASSWORD }} \
+            --docker-email=example@example.com
 
       - name: Deploy backend services
         run: |
