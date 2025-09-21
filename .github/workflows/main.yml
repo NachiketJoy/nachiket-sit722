@@ -1,0 +1,35 @@
+name: Stage 3 - Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-to-prod:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials --resource-group nachiket-prod-rg --name nachiket-prod-cluster
+
+    - name: Deploy backend services
+      run: |
+        kubectl apply -f week10/k8s/product-service.yaml
+        kubectl apply -f week10/k8s/order-service.yaml
+        kubectl apply -f week10/k8s/customer-service.yaml
+
+    - name: Verify deployments
+      run: |
+        kubectl rollout status deployment/product-service-w10
+        kubectl rollout status deployment/order-service-w10
+        kubectl rollout status deployment/customer-service-w10
