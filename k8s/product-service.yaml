@@ -16,13 +16,63 @@ spec:
     spec:
       containers:
       - name: product-service-container
-        image: week10.azurecr.io/product_service:latest
+        image: week10.azurecr.io/product-service:v2
         imagePullPolicy: Always
-        imagePullSecrets:
-      - name: acr-secret
         ports:
         - containerPort: 8000
-
+        env:
+        - name: POSTGRES_HOST
+          value: product-db-service-w10
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: ecomm-config-w10
+              key: PRODUCTS_DB_NAME
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecomm-secrets-w10
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecomm-secrets-w10
+              key: POSTGRES_PASSWORD
+        - name: AZURE_STORAGE_ACCOUNT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: ecomm-secrets-w10
+              key: AZURE_STORAGE_ACCOUNT_NAME
+        - name: AZURE_STORAGE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ecomm-secrets-w10
+              key: AZURE_STORAGE_ACCOUNT_KEY
+        - name: AZURE_STORAGE_CONTAINER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: ecomm-config-w10
+              key: AZURE_STORAGE_CONTAINER_NAME
+        - name: AZURE_SAS_TOKEN_EXPIRY_HOURS
+          valueFrom:
+            configMapKeyRef:
+              name: ecomm-config-w10
+              key: AZURE_SAS_TOKEN_EXPIRY_HOURS
+        - name: RABBITMQ_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: ecomm-config-w10
+              key: RABBITMQ_HOST
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecomm-secrets-w10
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASS
+          valueFrom:
+            secretKeyRef:
+              name: ecomm-secrets-w10
+              key: RABBITMQ_PASS
 ---
 apiVersion: v1
 kind: Service
@@ -35,6 +85,6 @@ spec:
     app: product-service
   ports:
     - protocol: TCP
-      port: 8001
+      port: 8000
       targetPort: 8000
   type: LoadBalancer

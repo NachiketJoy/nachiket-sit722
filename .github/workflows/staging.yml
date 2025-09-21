@@ -38,13 +38,6 @@ jobs:
             --generate-ssh-keys \
             --enable-managed-identity
 
-      # - name: Attach ACR to AKS
-      #   run: |
-      #     az aks update \
-      #       --name $CLUSTER_NAME \
-      #       --resource-group $RESOURCE_GROUP \
-      #       --attach-acr $ACR_NAME
-
       - name: Get AKS credentials
         run: az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
 
@@ -59,13 +52,30 @@ jobs:
             --docker-password=${{ secrets.ACR_PASSWORD }} \
             --docker-email=example@example.com
 
-      - name: Deploy backend services
+      - name: Deploy ConfigMaps and Secrets
+        run: |
+          kubectl apply -f k8s/configmaps.yaml
+          kubectl apply -f k8s/secrets.yaml
+
+      - name: Deploy Database Pods
+        run: |
+          kubectl apply -f k8s/product-db.yaml
+          kubectl apply -f k8s/order-db.yaml
+          kubectl apply -f k8s/customer-db.yaml
+
+      - name: Wait for Database Rollout
+        run: |
+          kubectl rollout status deployment/product-db-deployment-w10
+          kubectl rollout status deployment/order-db-deployment-w10
+          kubectl rollout status deployment/customer-db-deployment-w10
+
+      - name: Deploy Backend Services
         run: |
           kubectl apply -f k8s/product-service.yaml
           kubectl apply -f k8s/order-service.yaml
           kubectl apply -f k8s/customer-service.yaml
 
-      - name: Wait for deployments
+      - name: Wait for Backend Rollout
         run: |
           kubectl rollout status deployment/product-service-w10
           kubectl rollout status deployment/order-service-w10
