@@ -25,7 +25,6 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-
     - name: Create temporary resource group
       run: |
         az group create --name $RESOURCE_GROUP --location $LOCATION
@@ -36,6 +35,7 @@ jobs:
           --resource-group $RESOURCE_GROUP \
           --name $CLUSTER_NAME \
           --node-count 1 \
+          --node-vm-size Standard_DS2_v2 \
           --generate-ssh-keys \
           --enable-managed-identity
 
