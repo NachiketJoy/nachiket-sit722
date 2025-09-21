@@ -43,6 +43,20 @@ jobs:
           --health-retries 5
         ports:
           - 5433:5432
+      
+      customer_db:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: customers
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5434:5432
 
     steps:
       - name: Checkout repository
@@ -86,8 +100,8 @@ jobs:
         working-directory: backend/customer_service
         env:
           POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5433
-          POSTGRES_DB: orders
+          POSTGRES_PORT: 5434
+          POSTGRES_DB: customers
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         run: pytest tests --maxfail=1 --disable-warnings -q
