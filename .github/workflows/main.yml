@@ -16,9 +16,7 @@ jobs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        login-server: ${{ secrets.ACR_LOGIN_SERVER }}
-        username: ${{ secrets.ACR_USERNAME }}
-        password: ${{ secrets.ACR_PASSWORD }}
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Get AKS credentials
       run: |
