@@ -33,3 +33,7 @@ jobs:
         kubectl rollout status deployment/product-service-w10
         kubectl rollout status deployment/order-service-w10
         kubectl rollout status deployment/customer-service-w10
+
+    - name: Acceptance Test
+      run: |
+        kubectl get svc
