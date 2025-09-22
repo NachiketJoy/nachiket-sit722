@@ -10,30 +10,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Get AKS credentials
-      run: |
-        az aks get-credentials --resource-group nachiket-prod-rg --name nachiket-prod-cluster
+      - name: Set Azure subscription (optional if multiple subscriptions)
+        run: |
+          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
-    - name: Deploy backend services
-      run: |
-        kubectl apply -f week10/k8s/product-service.yaml
-        kubectl apply -f week10/k8s/order-service.yaml
-        kubectl apply -f week10/k8s/customer-service.yaml
+      - name: Verify Production AKS cluster exists
+        run: |
+          az aks show --resource-group nachiket-prod-rg --name nachiket-prod-cluster
 
-    - name: Verify deployments
-      run: |
-        kubectl rollout status deployment/product-service-w10
-        kubectl rollout status deployment/order-service-w10
-        kubectl rollout status deployment/customer-service-w10
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group nachiket-prod-rg \
+            --name nachiket-prod-cluster \
+            --overwrite-existing
 
-    - name: Acceptance Test
-      run: |
-        kubectl get svc
+      - name: Create/update Kubernetes secrets for ACR
+        run: |
+          kubectl create secret docker-registry acr-secret \
+            --docker-server=${{ secrets.ACR_LOGIN_SERVER }} \
+            --docker-username=${{ secrets.ACR_USERNAME }} \
+            --docker-password=${{ secrets.ACR_PASSWORD }} \
+            --docker-email=example@example.com \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy ConfigMaps and Secrets
+        run: |
+          kubectl apply -f week10/k8s/configmaps.yaml
+          kubectl apply -f week10/k8s/secrets.yaml
+
+      - name: Deploy backend services
+        run: |
+          kubectl apply -f week10/k8s/product-service.yaml
+          kubectl apply -f week10/k8s/order-service.yaml
+          kubectl apply -f week10/k8s/customer-service.yaml
+
+      - name: Verify deployments
+        run: |
+          kubectl rollout status deployment/product-service-w10
+          kubectl rollout status deployment/order-service-w10
+          kubectl rollout status deployment/customer-service-w10
+
+      - name: Acceptance Test
+        run: |
+          kubectl get svc
+          echo "Optionally curl exposed endpoints here"
