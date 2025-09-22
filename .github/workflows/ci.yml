@@ -3,7 +3,7 @@ name: CI Pipeline - Build and Push Testing Image
 on:
   push:
     branches:
-      - testing
+      - testingg
 
 env:
   ACR_NAME: ${{ secrets.ACR_NAME }}
