@@ -41,14 +41,14 @@ jobs:
 
       - name: Deploy ConfigMaps and Secrets
         run: |
-          kubectl apply -f week10/k8s/configmaps.yaml
-          kubectl apply -f week10/k8s/secrets.yaml
+          kubectl apply -f k8s/configmaps.yaml
+          kubectl apply -f k8s/secrets.yaml
 
       - name: Deploy backend services
         run: |
-          kubectl apply -f week10/k8s/product-service.yaml
-          kubectl apply -f week10/k8s/order-service.yaml
-          kubectl apply -f week10/k8s/customer-service.yaml
+          kubectl apply -f k8s/product-service.yaml
+          kubectl apply -f k8s/order-service.yaml
+          kubectl apply -f k8s/customer-service.yaml
 
       - name: Verify deployments
         run: |
