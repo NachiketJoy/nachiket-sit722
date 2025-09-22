@@ -20,7 +20,8 @@ jobs:
 
       - name: Verify Production AKS cluster exists
         run: |
-          az aks show --resource-group nachiket-prod-rg --name nachiket-prod-cluster
+          az aks show --resource-group staging-rg-17895123319 --name staging-cluster-17895123319
+
 
       - name: Get AKS credentials
         run: |
