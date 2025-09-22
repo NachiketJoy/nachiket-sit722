@@ -9,26 +9,23 @@ jobs:
   deploy-to-prod:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    env:
+      RESOURCE_GROUP: deakinuni
+      CLUSTER_NAME: week-10
 
+    steps:
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Verify Production AKS cluster exists
+      - name: Verify AKS cluster
         run: |
-          az aks show --resource-group deakinuni --name week-10
-
+          az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME
 
       - name: Get AKS credentials
         run: |
-          az aks get-credentials \
-            --resource-group deakinuni \
-            --name week-10 \
-            --overwrite-existing
+          az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
 
       - name: Deploy ConfigMaps and Secrets
         run: |
@@ -41,13 +38,8 @@ jobs:
           kubectl apply -f k8s/order-service.yaml
           kubectl apply -f k8s/customer-service.yaml
 
-      - name: Check Pod Status
-        run: |
-          echo "Checking pod status..."
-          kubectl get pods -o wide
+      - name: Check pod status
+        run: kubectl get pods -o wide
 
-      - name: Acceptance Test
-        run: |
-          kubectl get svc
-          echo "Optionally curl exposed endpoints here"
-          
+      - name: Acceptance test
+        run: kubectl get svc
