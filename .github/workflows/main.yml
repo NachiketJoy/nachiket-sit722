@@ -26,8 +26,8 @@ jobs:
       - name: Get AKS credentials
         run: |
           az aks get-credentials \
-            --resource-group nachiket-prod-rg \
-            --name nachiket-prod-cluster \
+            --resource-group staging-rg-17895123319 \
+            --name staging-cluster-17895123319 \
             --overwrite-existing
 
       - name: Create/update Kubernetes secrets for ACR
