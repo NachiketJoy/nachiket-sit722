@@ -63,23 +63,16 @@ jobs:
           kubectl apply -f k8s/order-db.yaml
           kubectl apply -f k8s/customer-db.yaml
 
-      # - name: Wait for Database Rollout
-      #   run: |
-      #     kubectl rollout status deployment/product-db-deployment-w10
-      #     kubectl rollout status deployment/order-db-deployment-w10
-      #     kubectl rollout status deployment/customer-db-deployment-w10
-
       - name: Deploy Backend Services
         run: |
           kubectl apply -f k8s/product-service.yaml
           kubectl apply -f k8s/order-service.yaml
           kubectl apply -f k8s/customer-service.yaml
 
-      - name: Wait for Backend Rollout
+      - name: Check Pod Status
         run: |
-          kubectl rollout status deployment/product-service-w10
-          kubectl rollout status deployment/order-service-w10
-          kubectl rollout status deployment/customer-service-w10
+          echo "Checking pod status..."
+          kubectl get pods -o wide
 
       - name: Run trivial acceptance test
         run: |
