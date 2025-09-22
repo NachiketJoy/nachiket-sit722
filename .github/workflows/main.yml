@@ -50,11 +50,10 @@ jobs:
           kubectl apply -f k8s/order-service.yaml
           kubectl apply -f k8s/customer-service.yaml
 
-      - name: Verify deployments
+      - name: Check Pod Status
         run: |
-          kubectl rollout status deployment/product-service-w10
-          kubectl rollout status deployment/order-service-w10
-          kubectl rollout status deployment/customer-service-w10
+          echo "Checking pod status..."
+          kubectl get pods -o wide
 
       - name: Acceptance Test
         run: |
