@@ -16,6 +16,8 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+      - name: acr-secret
       containers:
       - name: frontend-container
         image: week10.azurecr.io/frontend:latest

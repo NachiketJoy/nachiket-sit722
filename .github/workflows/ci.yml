@@ -138,6 +138,11 @@ jobs:
           docker build -t $ACR_LOGIN_SERVER/customer_service:latest ./backend/customer_service/
           docker push $ACR_LOGIN_SERVER/customer_service:latest
 
+      - name: Build and Push Frontend Image
+        run: |
+          docker build -t $ACR_LOGIN_SERVER/frontend:latest ./frontend/
+          docker push $ACR_LOGIN_SERVER/frontend:latest
+
 
     # Logout from Azure for security (runs even if image push fails)
     # - name: Logout from Azure
