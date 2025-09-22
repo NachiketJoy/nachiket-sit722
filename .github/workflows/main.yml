@@ -32,7 +32,13 @@ jobs:
           kubectl apply -f k8s/configmaps.yaml
           kubectl apply -f k8s/secrets.yaml
 
-      - name: Deploy backend services
+      - name: Deploy Database Pods
+        run: |
+          kubectl apply -f k8s/product-db.yaml
+          kubectl apply -f k8s/order-db.yaml
+          kubectl apply -f k8s/customer-db.yaml
+
+      - name: Deploy Backend Services
         run: |
           kubectl apply -f k8s/product-service.yaml
           kubectl apply -f k8s/order-service.yaml
