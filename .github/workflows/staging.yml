@@ -1,0 +1,84 @@
+name: Stage 2 - Deploy to Temporary Staging
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline - Build and Push Testing Image"]
+    types:
+      - completed
+
+jobs:
+  staging-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      RESOURCE_GROUP: staging-rg-${{ github.run_id }}
+      CLUSTER_NAME: staging-cluster-${{ github.run_id }}
+      LOCATION: australiaeast
+      ACR_NAME: ${{ secrets.ACR_NAME }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create temporary resource group
+        run: az group create --name $RESOURCE_GROUP --location $LOCATION
+
+      - name: Create AKS cluster
+        run: |
+          az aks create \
+            --resource-group $RESOURCE_GROUP \
+            --name $CLUSTER_NAME \
+            --node-count 1 \
+            --node-vm-size Standard_DS2_v2 \
+            --generate-ssh-keys \
+            --enable-managed-identity
+
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
+
+      - name: Docker Login to ACR
+        run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
+
+      - name: Create Kubernetes secret for ACR
+        run: |
+          kubectl create secret docker-registry acr-secret \
+            --docker-server=${{ secrets.ACR_LOGIN_SERVER }} \
+            --docker-username=${{ secrets.ACR_USERNAME }} \
+            --docker-password=${{ secrets.ACR_PASSWORD }} \
+            --docker-email=example@example.com
+
+      - name: Deploy ConfigMaps and Secrets
+        run: |
+          kubectl apply -f k8s/configmaps.yaml
+          kubectl apply -f k8s/secrets.yaml
+
+      - name: Deploy Database Pods
+        run: |
+          kubectl apply -f k8s/product-db.yaml
+          kubectl apply -f k8s/order-db.yaml
+          kubectl apply -f k8s/customer-db.yaml
+
+      - name: Deploy Backend Services
+        run: |
+          kubectl apply -f k8s/product-service.yaml
+          kubectl apply -f k8s/order-service.yaml
+          kubectl apply -f k8s/customer-service.yaml
+
+      - name: Check Pod Status
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -o wide
+
+      - name: Run trivial acceptance test
+        run: |
+          kubectl get svc
+          # Optionally test endpoints with curl if exposed
+
+      - name: Destroy staging environment
+        if: always()
+        run: az group delete --name $RESOURCE_GROUP --yes --no-wait
