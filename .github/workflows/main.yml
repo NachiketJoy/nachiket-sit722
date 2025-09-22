@@ -9,43 +9,44 @@ jobs:
   deploy-to-prod:
     runs-on: ubuntu-latest
 
-    env:
-      RESOURCE_GROUP: deakinuni
-      CLUSTER_NAME: week-10
-
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Verify AKS cluster
+      - name: Verify Production AKS cluster exists
         run: |
-          az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME
+          az aks show --resource-group deakinuni --name week-10
+
 
       - name: Get AKS credentials
         run: |
-          az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing
+          az aks get-credentials \
+            --resource-group deakinuni \
+            --name week-10 \
+            --overwrite-existing
 
       - name: Deploy ConfigMaps and Secrets
         run: |
           kubectl apply -f k8s/configmaps.yaml
           kubectl apply -f k8s/secrets.yaml
 
-      - name: Deploy Database Pods
-        run: |
-          kubectl apply -f k8s/product-db.yaml
-          kubectl apply -f k8s/order-db.yaml
-          kubectl apply -f k8s/customer-db.yaml
-
-      - name: Deploy Backend Services
+      - name: Deploy backend services
         run: |
           kubectl apply -f k8s/product-service.yaml
           kubectl apply -f k8s/order-service.yaml
           kubectl apply -f k8s/customer-service.yaml
 
-      - name: Check pod status
-        run: kubectl get pods -o wide
+      - name: Check Pod Status
+        run: |
+          echo "Checking pod status..."
+          kubectl get pods -o wide
 
-      - name: Acceptance test
-        run: kubectl get svc
+      - name: Acceptance Test
+        run: |
+          kubectl get svc
+          echo "Optionally curl exposed endpoints here"
