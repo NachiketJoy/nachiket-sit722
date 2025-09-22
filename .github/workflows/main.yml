@@ -22,7 +22,6 @@ jobs:
         run: |
           az aks show --resource-group deakinuni --name week-10
 
-
       - name: Get AKS credentials
         run: |
           az aks get-credentials \
@@ -30,16 +29,49 @@ jobs:
             --name week-10 \
             --overwrite-existing
 
+      - name: Docker Login to ACR
+        run: echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
+
+      - name: Create Kubernetes secret for ACR
+        run: |
+          kubectl create secret docker-registry acr-secret \
+            --docker-server=${{ secrets.ACR_LOGIN_SERVER }} \
+            --docker-username=${{ secrets.ACR_USERNAME }} \
+            --docker-password=${{ secrets.ACR_PASSWORD }} \
+            --docker-email=example@example.com \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Deploy ConfigMaps and Secrets
         run: |
           kubectl apply -f k8s/configmaps.yaml
           kubectl apply -f k8s/secrets.yaml
+
+      - name: Deploy Database Pods
+        run: |
+          kubectl apply -f k8s/product-db.yaml
+          kubectl apply -f k8s/order-db.yaml
+          kubectl apply -f k8s/customer-db.yaml
+
+      - name: Deploy RabbitMQ
+        run: |
+          kubectl apply -f k8s/rabbitmq.yaml
+
+      - name: Wait for databases and RabbitMQ to be ready
+        run: |
+          kubectl wait --for=condition=ready pod -l app=product-db --timeout=300s
+          kubectl wait --for=condition=ready pod -l app=order-db --timeout=300s
+          kubectl wait --for=condition=ready pod -l app=customer-db --timeout=300s
+          kubectl wait --for=condition=ready pod -l app=rabbitmq --timeout=300s
 
       - name: Deploy backend services
         run: |
           kubectl apply -f k8s/product-service.yaml
           kubectl apply -f k8s/order-service.yaml
           kubectl apply -f k8s/customer-service.yaml
+
+      - name: Deploy Frontend
+        run: |
+          kubectl apply -f k8s/frontend.yaml
 
       - name: Check Pod Status
         run: |
