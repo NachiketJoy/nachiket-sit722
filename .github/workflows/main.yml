@@ -18,10 +18,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Set Azure subscription (optional if multiple subscriptions)
-        run: |
-          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-
       - name: Verify Production AKS cluster exists
         run: |
           az aks show --resource-group nachiket-prod-rg --name nachiket-prod-cluster
