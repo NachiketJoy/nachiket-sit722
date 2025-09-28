@@ -18,7 +18,7 @@ spec:
       - name: acr-secret
       containers:
       - name: product-service-container
-        image: week10.azurecr.io/product_service:latest
+        image: sit722w10acr.azurecr.io/product_service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

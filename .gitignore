@@ -3,6 +3,21 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# OpenTofu/Terraform state and artifacts
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*.override.tf
+*.override.tf.json
+.terraform.lock.hcl
+infra/opentofu/kubeconfig
+
+README-dev.md
+
+
 # C extensions
 *.so
 

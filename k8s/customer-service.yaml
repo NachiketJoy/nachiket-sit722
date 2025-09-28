@@ -18,7 +18,7 @@ spec:
       - name: acr-secret
       containers:
       - name: customer-service-container
-        image: week10.azurecr.io/customer_service:latest
+        image: sit722w10acr.azurecr.io/customer_service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8002
@@ -53,5 +53,5 @@ spec:
   ports:
     - protocol: TCP
       port: 8002
-      targetPort: 8002
+      targetPort: 8000
   type: LoadBalancer
