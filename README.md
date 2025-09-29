@@ -174,6 +174,5 @@ Default credentials:
 
 ## 📊 Architecture Overview
 
-```
 <img width="441" height="520" alt="image" src="https://github.com/user-attachments/assets/6e9548a7-ddd9-415d-ada8-384f1ceac834" />
 ```
